@@ -1,74 +1,77 @@
 # osc2mean_EUK
 
-基于 MATLAB 的瞬时轨道根数转平均轨道根数程序。先使用 Eckstein–Ustinov 方法迭代求解 J2 平均根数，再减去 Kaula 一阶非 J2 短周期改正。
+瞬时轨道根数转平均轨道根数的 MATLAB 与 Python 实现。先使用 Eckstein–Ustinov（EU）方法迭代求解 J2 平均根数，再减去 Kaula 一阶非 J2 短周期改正，得到 EUK 平均根数。
 
-## 快速运行
+## 目录结构
 
-使用 MATLAB 打开本目录，运行：
+```text
+.
+├── osc2mean_EUK_matlab/       # MATLAB 实现
+│   ├── verifyOsc2Mean.m      # 示例入口
+│   ├── orbit_input.csv      # 18 点输入
+│   └── GGM03C.gfc           # 重力场系数
+└── osc2mean_EUK-python/      # Python 实现
+    ├── osc2mean.py          # 算法及辅助函数
+    ├── verifyOsc2Mean.py    # 示例入口
+    ├── requirements.txt
+    └── data/
+        ├── checkpoints_18.csv
+        └── GGM03C.gfc
+```
+
+两个版本可独立运行，各自保留一份内容相同的重力场文件。详细说明见 [MATLAB README](osc2mean_EUK_matlab/README.md) 和 [Python README](osc2mean_EUK-python/README.md)。
+
+## MATLAB 运行
+
+在 MATLAB 中将当前文件夹切换到仓库根目录，执行：
 
 ```matlab
+cd osc2mean_EUK_matlab
 verifyOsc2Mean
 ```
 
-已在 MATLAB R2024b 上验证。示例读取 `orbit_input.csv` 和 `GGM03C.gfc`，绘制瞬时、J2 平均及 EUK 平均半长轴，并打印样本数、半长轴峰峰值、J2 迭代残差和迭代次数。结果保留在工作区，不自动写入结果文件。
+MATLAB 版本已在 R2024b 中验证。示例读取本目录数据，绘制半长轴变化并打印收敛信息，结果保留在工作区，不自动保存结果文件。
 
-## 输入数据
+## Python 运行
 
-`orbit_input.csv` 18 个点测试点。
+使用 Python 3.10 或更新版本，在仓库根目录的终端执行：
 
-| 列 | 含义 | 单位 |
-| --- | --- | --- |
-| epoch | 历元，格式 `yyyy-MM-dd HH:mm:ss.SSSSSSSSS` | 日期时间 |
-| a_km | 半长轴 | km |
-| e | 偏心率 | 无量纲 |
-| i_deg | 轨道倾角 | deg |
-| RAAN_deg | 升交点赤经 | deg |
-| omega_deg | 近地点幅角 | deg |
-| M_deg | 平近点角 | deg |
-
-替换数据时请沿用列名、单位、角度定义及一致的参考坐标系和时间约定。程序不会转换参考坐标系或时间尺度。
-
-## 函数调用
-
-```matlab
-opts = struct('Lmax', 30, 'qMax', 4, 'gN', 4);
-[opts.C, opts.S] = read_GGM03C_gfc('GGM03C.gfc', opts.Lmax);
-coe_osc = [6907.58807407627; 0.00134444185009642; ...
-           97.4982057684827; 0.0135806901159646; ...
-           70.6898082174351; 289.455537785476];
-epoch = datetime('2027-07-08 08:00:01.054932961', ...
-                 'InputFormat', 'yyyy-MM-dd HH:mm:ss.SSSSSSSSS');
-[coe_mean, info] = osc2mean_EUK(coe_osc, epoch, opts);
+```sh
+python -m pip install -r osc2mean_EUK-python/requirements.txt
+python osc2mean_EUK-python/verifyOsc2Mean.py
 ```
 
-输入和输出均为列向量 `[a; e; i; RAAN; omega; M]`，半长轴单位 km，角度单位 deg。`info` 包含 J2 迭代收敛标志、位置和速度残差、迭代历史、J2 平均根数与 Kaula 改正量。`info.converged` 只表示 J2 反演收敛。
+依赖为 NumPy 和 Matplotlib，也可在 PyCharm 中直接运行 `verifyOsc2Mean.py`。脚本按自身位置读取数据，无需修改绝对路径。运行后打印计算摘要并显示图窗。
 
-## 文件组成
+## 输入约定
 
-| 文件 | 用途 |
+两版均提供 18 个测试点。根数顺序为 `[a, e, i, RAAN, omega, M]`：半长轴单位 km，偏心率无量纲，角度单位 deg。**最后一个根数已经是平近点角 M，无需再次转换。**
+
+| 内容 | MATLAB CSV | Python CSV |
+| --- | --- | --- |
+| 文件 | `orbit_input.csv` | `data/checkpoints_18.csv` |
+| 升交点赤经列名 | `RAAN_deg` | `raan_deg` |
+| 历元示例 | `2027-07-08 08:00:01.054932961` | `2027-07-08 08:00:01.054932` |
+| 时间精度 | 文件保留 9 位小数秒 | Python datetime 使用微秒精度 |
+
+替换数据时请沿用对应版本的列名、单位和日期格式。示例历元不带时区；程序不自动完成坐标系或时间尺度转换。比较两版结果时，应统一历元精度、输入数值和参数，并允许浮点运算带来的微小差异。
+
+## 参数与结果
+
+默认截断参数为 `Lmax = 30`、`qMax = 4`、`gN = 4`。MATLAB 参数在示例的 `opts` 中设置，Python 参数在示例顶部的 `LMAX, QMAX, GN` 中设置。
+
+示例输出区分瞬时根数（Osculating）、EU 阶段结果（J2-Mean）与 Kaula 改正后的结果（EUK-Mean）。18 点示例的半长轴峰峰值参考如下：
+
+| 结果 | 半长轴峰峰值 |
 | --- | --- |
-| verifyOsc2Mean.m | 示例入口、绘图及收敛检查 |
-| orbit_input.csv | 18 点瞬时轨道根数，末项为 M |
-| osc2mean_EUK.m | J2 平均根数与 Kaula 改正的组合入口 |
-| osc2mean_EU.m | J2 平均根数迭代反演 |
-| eu_J2_short_period.m | Eckstein–Ustinov J2 短周期摄动 |
-| coe2EUK_deg.m、EUK2coe_deg.m | 经典根数与 EU 根数互转 |
-| coe2rv_EU.m、rv2coe_EU.m | 轨道根数与位置速度互转 |
-| KaulaShortPeriod.m | 非 J2 的 Kaula 短周期改正 |
-| KaulaFTable_EU.m、KaulaF_EU.m | 倾角函数及其导数 |
-| KaulaG_EU.m | 偏心率函数及其导数 |
-| gmst_EU.m | 格林尼治恒星时角 |
-| read_GGM03C_gfc.m | 重力场系数读取 |
-| GGM03C.gfc | GGM03C 重力场，保留原文件及模型说明 |
+| Osculating | 约 18762.640122 m |
+| J2-Mean | 约 169.809141 m |
+| EUK-Mean | 约 1.367967 m |
 
-示例参数为 `Lmax = 30`、`qMax = 4`、`gN = 4`。重力场原文件保留，可在其支持范围内调整阶数；提高截断参数会增加计算量。
+峰峰值为样本最大值减最小值，用于复现示例，不代表相对外部真值的误差。`info.converged` 仅表示 J2 反演收敛。
 
-## 适用范围
+## 适用范围与资料
 
-本程序使用 J2 与一阶重力场短周期模型，不包含大气阻力、日月引力或太阳光压等摄动。Kaula 经典根数表达要求 `0 < e < 1` 且轨道非赤道；圆轨道及接近奇异条件的轨道需另行处理。示例为低偏心率近地轨道，其他轨道应独立验证截断参数与精度。
+本程序面向低偏心率近地轨道，包含 J2 与一阶重力场短周期改正，不包含大气阻力、日月引力及太阳光压等摄动。Kaula 经典根数表达要求 `0 < e < 1` 且轨道非赤道；其他轨道需独立验证模型适用性和截断参数。
 
-GGM03C 的模型说明和参考文献信息见 `GGM03C.gfc` 文件头。程序相关理论参考：*Precise mean orbital elements determination for LEO monitoring and maintenance*。
-## 验证记录
-
-在 MATLAB R2024b 中完成全部 18 点运行：全部 J2 反演均以 5 次迭代收敛。示例 EUK 平均半长轴峰峰值约 1.367967 m。与文献量级一致。
-
+理论参考：*Precise mean orbital elements determination for LEO monitoring and maintenance*。GGM03C 模型说明和参考文献信息保留在 `.gfc` 文件头中。

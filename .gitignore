@@ -1,9 +1,21 @@
+# Python environments and generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local IDE settings
+.idea/
+.vscode/
+
 # MATLAB generated files
 *.asv
 *.m~
 slprj/
 codegen/
 verifyOsc2Mean_results.mat
-# Local OS files
+
+# OS files
 .DS_Store
 Thumbs.db
