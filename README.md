@@ -8,7 +8,7 @@
 .
 ├── osc2mean_EUK_matlab/       # MATLAB 实现
 │   ├── verifyOsc2Mean.m      # 示例入口
-│   ├── orbit_input.csv      # 18 点输入
+│   ├── orbit_input.xlsx      # 18 点输入
 │   └── GGM03C.gfc           # 重力场系数
 └── osc2mean_EUK-python/      # Python 实现
     ├── osc2mean.py          # 算法及辅助函数
@@ -47,14 +47,14 @@ python osc2mean_EUK-python/verifyOsc2Mean.py
 
 两版均提供 18 个测试点。根数顺序为 `[a, e, i, RAAN, omega, M]`：半长轴单位 km，偏心率无量纲，角度单位 deg。**最后一个根数已经是平近点角 M，无需再次转换。**
 
-| 内容 | MATLAB CSV | Python CSV |
+| 内容 | MATLAB Excel | Python CSV |
 | --- | --- | --- |
-| 文件 | `orbit_input.csv` | `data/checkpoints_18.csv` |
-| 升交点赤经列名 | `RAAN_deg` | `raan_deg` |
-| 历元示例 | `2027-07-08 08:00:01.054932961` | `2027-07-08 08:00:01.054932` |
-| 时间精度 | 文件保留 9 位小数秒 | Python datetime 使用微秒精度 |
+| 文件 | `orbit_input.xlsx` | `data/checkpoints_18.csv` |
+| 读取规则 | 按 A:G 列位置读取，不依赖列名 | 按 CSV 列名读取，升交点赤经为 `raan_deg` |
+| 历元显示示例 | `2027/7/8 8:00:01.055` | `2027-07-08 08:00:01.054932` |
+| 时间处理 | Excel 日期单元格，显示到毫秒；代码自动识别日期 | Python datetime 使用微秒精度 |
 
-替换数据时请沿用对应版本的列名、单位和日期格式。示例历元不带时区；程序不自动完成坐标系或时间尺度转换。比较两版结果时，应统一历元精度、输入数值和参数，并允许浮点运算带来的微小差异。
+MATLAB 表格第一行为表头，A 列为历元，B:G 列依次为六个轨道根数；替换数据时保持列顺序和单位，日期须能被 MATLAB 自动识别。Python CSV 则需沿用原有列名和日期格式。Excel 的显示位数不等于底层日期数值的精度。示例历元不带时区；程序不自动完成坐标系或时间尺度转换。比较两版结果时，应统一历元精度、输入数值和参数，并允许浮点运算带来的微小差异。
 
 ## 参数与结果
 
