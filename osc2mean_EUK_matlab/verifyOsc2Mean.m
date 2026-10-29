@@ -26,7 +26,7 @@ assert(n > 0, 'Input file contains no data rows.');
 
 % 2. 读取时间部分（第1列），去掉表头
 % readtable 默认会把第一行作为列名，所以 inputTable{:,1} 直接就是数据
-inputTable = readtable(inputFile, 'Range', 'A:A');
+inputTable = readtable(inputFile, 'Range', 'A:A', 'VariableNamingRule', 'preserve');
 epochStrs = string(inputTable{:, 1});
 
 % 3. 自动识别时间格式
