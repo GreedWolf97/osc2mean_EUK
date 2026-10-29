@@ -1,12 +1,11 @@
-
-clc; clear; 
+clc; clear;
 projectDir = fileparts(mfilename('fullpath'));
 addpath(projectDir);
 
 opts = struct();
 
 % 重力场参数
-opts.Lmax = 30; 
+opts.Lmax = 30;
 opts.qMax = 4;
 opts.gN = 4; % 级数保留项，e约为0.001，4项就够
 
@@ -16,14 +15,24 @@ gfcFile = fullfile(projectDir, 'GGM03C.gfc');
 opts.C = C;
 opts.S = S;
 
-% 输入第六项已经是平近点角 M，直接参与计算。
-inputFile = fullfile(projectDir, 'orbit_input.csv');
-importOpts = detectImportOptions(inputFile);
-importOpts = setvartype(importOpts, 'epoch', 'string');
-input = readtable(inputFile, importOpts);
-times = datetime(string(input.epoch), 'InputFormat', 'yyyy-MM-dd HH:mm:ss.SSSSSSSSS');
-coe_osc = input{:, {'a_km', 'e', 'i_deg', 'RAAN_deg', 'omega_deg', 'M_deg'}};
-n = height(input);
+% ===== 读取输入文件：按列位置读，不依赖列名 =====
+inputFile = fullfile(projectDir, 'orbit_input.xlsx');
+
+% 1. 读取数值部分（第2~7列，包含表头），然后去掉第1行表头
+raw_nums = readmatrix(inputFile, 'Range', 'B:G');
+coe_osc = raw_nums(2:end, :); % 剔除表头，得到纯数值矩阵 n x 6
+n = size(coe_osc, 1);
+assert(n > 0, 'Input file contains no data rows.');
+
+% 2. 读取时间部分（第1列），去掉表头
+% readtable 默认会把第一行作为列名，所以 inputTable{:,1} 直接就是数据
+inputTable = readtable(inputFile, 'Range', 'A:A');
+epochStrs = string(inputTable{:, 1});
+
+% 3. 自动识别时间格式
+times = datetime(epochStrs);
+% ===== 读取输入文件结束 =====
+
 a_osc = coe_osc(:, 1);
 coe_means = zeros(n, 6);
 coe_J2means = zeros(n, 6);
@@ -40,6 +49,7 @@ for j = 1:n
     iterations(j) = info.iter;
     coe_means(j, :) = coe_mean.';
 end
+
 % 画图
 plot(times, a_osc, 'b-', 'LineWidth', 1.5); hold on;
 plot(times, coe_means(:, 1), 'r-', 'LineWidth', 1.5);
